@@ -44,6 +44,13 @@ export class AuthService extends PrismaClient implements OnModuleInit {
       });
     }
 
+    if (!userFound.isActive) {
+      throw new RpcException({
+        status: HttpStatus.BAD_REQUEST,
+        message: 'User is not active',
+      });
+    }
+
     const equalsPassword = bcrypt.compareSync(password, userFound.password);
     if (!equalsPassword) {
       throw new RpcException({
@@ -123,6 +130,18 @@ export class AuthService extends PrismaClient implements OnModuleInit {
     });
 
     const { iat, exp, ...user } = payload;
+
+    const userFound = await this.user.findUnique({
+      where: { id: user.id },
+    });
+
+    if (!userFound.isActive) {
+      throw new RpcException({
+        status: HttpStatus.BAD_REQUEST,
+        message: 'User is not active',
+      });
+    }
+
     return {
       user,
       token: await this.jwtServices.sign(user),
